@@ -1,0 +1,19 @@
+[
+    // Start Game
+    {"command": "tetris_game", "keys": ["alt+t"]},
+
+    // Operation
+    { "keys": ["up"], "command": "tetris_operation", "args": {"operation": "up"}, "context":[
+        { "key": "setting.isGameTetris", "operator": "equal", "operand": true }
+    ]},
+    { "keys": ["down"], "command": "tetris_operation", "args": {"operation": "down"}, "context":[
+        { "key": "setting.isGameTetris", "operator": "equal", "operand": true }
+    ]},
+    { "keys": ["left"], "command": "tetris_operation", "args": {"operation": "left"}, "context":[
+        { "key": "setting.isGameTetris", "operator": "equal", "operand": true }
+    ]},
+    { "keys": ["right"], "command": "tetris_operation", "args": {"operation": "right"}, "context":[
+        { "key": "setting.isGameTetris", "operator": "equal", "operand": true }
+    ]},
+
+]
