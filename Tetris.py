@@ -293,21 +293,17 @@ class Board():
 
     def turn_block(self):
         tiles = []
-        turned_tiles = []
         for tile in self.blocks:
-            turned_tiles.append(_turn_pos(tile))
-
-            pos = self.block_pos + tile
-            if check_pos_valid(pos) == False: return False
-
+            pos = _turn_pos(tile)
+            if check_pos_valid(self.block_pos + pos) == False: return False
             tiles.append(pos)
 
         if self.check_contain(tiles):
-            self.blocks = turned_tiles
+            self.blocks = tiles
+            self.refresh_view()
 
     def block_up(self):
         self.turn_block()
-        self.refresh_view()
 
     def block_down(self):
         if self.check_block_move(Direction.down):
@@ -321,10 +317,12 @@ class Board():
     def block_left(self):
         if self.check_block_move(Direction.left):
             self.block_pos = self.block_pos + Direction.left
+            self.refresh_view()
 
     def block_right(self):
         if self.check_block_move(Direction.right):
             self.block_pos = self.block_pos + Direction.right
+            self.refresh_view()
 
 
 # ----------------------------------------------------------
