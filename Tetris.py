@@ -189,6 +189,12 @@ def _turn_pos(p):
     sublime.error_message('turn_pos errer')
 
 
+def check_pos_valid(pos):
+    if pos.x >= BOARD_WIDTH - 1 or pos.x < 0: return False
+    if pos.y >= BOARD_HEIGHT - 1: return False
+    return True
+
+
 class Board():
     def __init__(self):
         # create game view
@@ -223,6 +229,7 @@ class Board():
 
         for tile in self.block_tiles:
             pos = tile + self.block_pos
+            if check_pos_valid(pos) == False: continue
             tiles[pos.x][pos.y] = TileType.BLOCK
         return tiles
 
@@ -253,9 +260,9 @@ class Board():
         tiles = []
         for tile in self.block_tiles:
             pos = new_pos + tile
-            if pos.x >= BOARD_WIDTH - 1 or pos.x < 0: return False
-            if pos.y >= BOARD_HEIGHT - 1: return False
+            if check_pos_valid(pos) == False: return False
             tiles.append(pos)
+
         return self.check_contain(tiles)
 
     def turn_block(self):
@@ -265,9 +272,10 @@ class Board():
             turned_tiles.append(_turn_pos(tile))
 
             pos = self.block_pos + tile
-            if pos.x >= BOARD_WIDTH - 1 or pos.x < 0: return False
-            if pos.y >= BOARD_HEIGHT - 1: return False
+            if check_pos_valid(pos) == False: return False
+
             tiles.append(pos)
+
         if self.check_contain(tiles):
             self.block_tiles = turned_tiles
 
