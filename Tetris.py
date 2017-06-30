@@ -95,8 +95,6 @@ class Timer():
 
     def update(self):
         if self.flag is False: return
-        # t = threading.Timer(1 / FPS, self.update)
-        # t.start()
 
         self.cmd(time.time() - self.last_time)
         self.last_time = time.time()
@@ -278,6 +276,7 @@ class Board():
     def block_down(self):
         if self.check_block_move(Direction.down):
             self.block_pos = self.block_pos + Direction.down
+            self.refresh_view()
         else:
             self.merge_board(True)
             self.create_block()
@@ -337,7 +336,6 @@ class TetrisGame(sublime_plugin.TextCommand):
 
 class TetrisOperation(sublime_plugin.WindowCommand):
     def run(self, **args):
-        global game_ctrl
         operation = args.get('operation')
         if operation == 'up':
             game_ctrl.block_up()
