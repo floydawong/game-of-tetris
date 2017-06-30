@@ -62,16 +62,29 @@ class TetrisRender(sublime_plugin.TextCommand):
             self.finish()
 
     def update(self, edit, data):
+        tiles = data.get('tiles')
+        prepare_tiles = data.get('prepare_tiles')
+
+        # clear view content
         region = sublime.Region(0, self.view.size())
         self.view.erase(edit, region)
 
-        content = '\n'
+        content = ''
+        for a in range(0, 4):
+            for b in range(0, 4):
+                if prepare_tiles[b][a] == TileType.EMPTY:
+                    content += ' '
+                else:
+                    content += '*'
+            content += '\n'
+
+        content += '\n'
         content += '.' * (BOARD_WIDTH + 1)
         content += '\n'
         for a in range(0, BOARD_HEIGHT - 1):
             content += '.'
             for b in range(0, BOARD_WIDTH - 1):
-                if data[b][a] == TileType.EMPTY:
+                if tiles[b][a] == TileType.EMPTY:
                     content += ' '
                 else:
                     content += '*'
@@ -146,7 +159,7 @@ class BlockFactory():
         [** ** ** 11] --> 5 8 9 10
         [12 13 14 15]
         """
-        self.blocks = [
+        self.block_type = [
             [5, 6, 9, 10], # 2*2
             [5, 8, 9, 10], # T
             [1, 5, 9, 10], # L
@@ -158,12 +171,12 @@ class BlockFactory():
         return self.index_pos_map[index]
 
     def get_amount(self):
-        return len(self.blocks)
+        return len(self.block_type)
 
     def create(self):
         block_id = random.randint(0, self.get_amount() - 1)
         tiles = []
-        for index in self.blocks[block_id]:
+        for index in self.block_type[block_id]:
             tile = self._change_index_to_pos(index)
             tiles.append(tile)
         return tiles
@@ -210,16 +223,26 @@ class Board():
 
         # member variable
         self.update_time = 0
-        self.block_tiles = []
+        self.prepare_blocks = []
+        self.blocks = []
         self.tiles = [[TileType.EMPTY for x in range(BOARD_WIDTH)]
                       for x in range(BOARD_HEIGHT)]
 
         self.create_block()
+        self.create_block()
 
     def create_block(self):
-        self.block_tiles = self.block_factory.create()
+        self.blocks = self.prepare_blocks
         self.block_pos = Pos(BOARD_WIDTH // 2, 0)
-        pass
+        self.prepare_blocks = self.block_factory.create()
+
+        self.prepare_tiles = [[TileType.EMPTY for x in range(4)]
+                      for x in range(4)]
+
+        for tile in self.prepare_blocks:
+            pos = Pos(2,2) + tile
+            self.prepare_tiles[pos.x][pos.y] = TileType.BLOCK
+
 
     def merge_board(self, is_really=False):
         if is_really:
@@ -227,7 +250,7 @@ class Board():
         else:
             tiles = copy.deepcopy(self.tiles)
 
-        for tile in self.block_tiles:
+        for tile in self.blocks:
             pos = tile + self.block_pos
             if check_pos_valid(pos) == False: continue
             tiles[pos.x][pos.y] = TileType.BLOCK
@@ -236,7 +259,10 @@ class Board():
     def refresh_view(self):
         args = {
             "cmd": RenderStatus.UPDATE,
-            "data": self.merge_board(),
+            "data": {
+                "tiles": self.merge_board(),
+                "prepare_tiles": self.prepare_tiles,
+            }
         }
         # TetrisRender
         self.game_view.run_command('tetris_render', args)
@@ -258,7 +284,7 @@ class Board():
     def check_block_move(self, dir):
         new_pos = self.block_pos + dir
         tiles = []
-        for tile in self.block_tiles:
+        for tile in self.blocks:
             pos = new_pos + tile
             if check_pos_valid(pos) == False: return False
             tiles.append(pos)
@@ -268,7 +294,7 @@ class Board():
     def turn_block(self):
         tiles = []
         turned_tiles = []
-        for tile in self.block_tiles:
+        for tile in self.blocks:
             turned_tiles.append(_turn_pos(tile))
 
             pos = self.block_pos + tile
@@ -277,7 +303,7 @@ class Board():
             tiles.append(pos)
 
         if self.check_contain(tiles):
-            self.block_tiles = turned_tiles
+            self.blocks = turned_tiles
 
     def block_up(self):
         self.turn_block()
