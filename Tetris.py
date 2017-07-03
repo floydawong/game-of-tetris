@@ -5,12 +5,14 @@ import time
 import copy
 import threading
 
+
+game_ctrl = None
 # ----------------------------------------------------------
 # Const
 # ----------------------------------------------------------
 FPS = 24
 BLOCK_DOWN_TIME = 0.3
-BOARD_WIDTH = 15
+BOARD_WIDTH = 11
 BOARD_HEIGHT = 15
 
 
@@ -47,6 +49,11 @@ class RenderStatus():
 class ViewSettings():
     isGameTetris = "isGameTetris"
 
+
+# ----------------------------------------------------------
+def _delay(time, func):
+    t = threading.Timer(time, func)
+    t.start()
 
 # ----------------------------------------------------------
 class TetrisRender(sublime_plugin.TextCommand):
@@ -112,8 +119,7 @@ class Timer():
         self.cmd(time.time() - self.last_time)
         self.last_time = time.time()
 
-        t = threading.Timer(1 / FPS, self.update)
-        t.start()
+        _delay(1 / FPS, self.update)
 
     def start(self):
         self.flag = True
@@ -225,8 +231,8 @@ class Board():
         self.update_time = 0
         self.prepare_blocks = []
         self.blocks = []
-        self.tiles = [[TileType.EMPTY for x in range(BOARD_WIDTH)]
-                      for x in range(BOARD_HEIGHT)]
+        self.tiles = [[TileType.EMPTY for x in range(BOARD_HEIGHT)]
+                      for x in range(BOARD_WIDTH)]
 
         self.create_block()
         self.create_block()
@@ -311,6 +317,12 @@ class Board():
             self.refresh_view()
         else:
             self.merge_board(True)
+
+            # check game over
+            if self.block_pos.y <= 1:
+                global game_ctrl
+                game_ctrl.finish()
+                return
             self.create_block()
             self.refresh_view()
 
@@ -325,12 +337,19 @@ class Board():
             self.refresh_view()
 
 
+    def finish(self):
+        def _done(y):
+            if y < 0: return
+            for x in range(BOARD_WIDTH):
+                self.tiles[x][y] = TileType.BLOCK
+            self.refresh_view()
+            _delay(0.1, lambda: _done(y - 1))
+        _done(BOARD_HEIGHT - 1)
+
+
 # ----------------------------------------------------------
 # Controller
 # ----------------------------------------------------------
-game_ctrl = None
-
-
 class GameControl():
     def __init__(self):
         self.board = Board()
@@ -347,6 +366,7 @@ class GameControl():
 
     def finish(self):
         self.timer.stop()
+        self.board.finish()
 
     def block_up(self):
         self.board.block_up()
